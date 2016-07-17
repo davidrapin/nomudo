@@ -73,7 +73,7 @@ const ydl = (url, done) => {
     '-f', 'mp3/mp4/aac/bestaudio',
     '--extract-audio',
     '--audio-format', 'mp3',
-    '--ffmpeg-path', FFMPEG_PATH,
+    '--ffmpeg-location', FFMPEG_PATH,
     url
   ]);
   var out = '';
