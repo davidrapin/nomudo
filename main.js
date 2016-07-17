@@ -57,7 +57,7 @@ const checkYDL = (done) => {
       res.pipe(targetStream);
       res.on('end', () => {
         console.log(`Downloading YDL: done (size: ${res.headers['content-length']})`);
-        fs.chmodSync(YDL_BIN_PATH, 0755);
+        fs.chmodSync(YDL_BIN_PATH, '755');
         done();
       });
     });
