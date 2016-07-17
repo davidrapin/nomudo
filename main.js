@@ -14,6 +14,7 @@ const YDL_URL = 'https://yt-dl.org/downloads/latest/youtube-dl';
 const YDL_PATH = path.resolve(__dirname, 'ydl');
 const YDL_BIN_PATH = path.resolve(__dirname, 'ydl', 'youtube-dl');
 const DOWNLOAD_PATH = path.resolve(__dirname, 'download');
+const FFMPEG_PATH = path.resolve(__dirname, 'ffmpeg-3.1.1-64bit-static');
 
 const app = express();
 //app.use(bodyParser.json());
@@ -69,7 +70,10 @@ const ydl = (url, done) => {
   var child = spawn(YDL_BIN_PATH, [
     '--no-color', 
     '-o', path.resolve(DOWNLOAD_PATH, '%(id)s_%(title)s.%(ext)s'),
-    '-f', 'mp3,mp4,aac'
+    '-f', 'mp3/mp4/aac/bestaudio',
+    '--extract-audio',
+    '--audio-format', 'mp3',
+    '--ffmpeg-path', FFMPEG_PATH,
     url
   ]);
   var out = '';
