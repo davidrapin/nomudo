@@ -13,7 +13,7 @@ const PORT = 3030;
 const YDL_URL = 'https://yt-dl.org/downloads/latest/youtube-dl';
 const YDL_PATH = path.resolve(__dirname, 'ydl');
 const YDL_BIN_PATH = path.resolve(__dirname, 'ydl', 'youtube-dl');
-const DOWNLOAD_PATH = path.resolve(__dirname, 'download');
+const DOWNLOAD_PATH = '/home/david/btsync-data/nomudo-files'; //path.resolve(__dirname, 'download');
 const FFMPEG_PATH = path.resolve(__dirname, 'ffmpeg-3.1.1-64bit-static');
 
 const app = express();
