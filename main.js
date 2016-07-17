@@ -37,7 +37,7 @@ const page = (message) => {
           <input type="submit" value="Ok"/>
       </div>
     </form>
-    <div style="font-weight:bold; color:#f00;">${message}</div>
+    <pre style="font-weight:bold; color:#f00;">${message}</pre>
   </html>`;
 };
 
@@ -69,6 +69,7 @@ const ydl = (url, done) => {
   var child = spawn(YDL_BIN_PATH, [
     '--no-color', 
     '-o', path.resolve(DOWNLOAD_PATH, '%(id)s_%(title)s.%(ext)s'),
+    '-f', 'mp3,mp4,aac'
     url
   ]);
   var out = '';
