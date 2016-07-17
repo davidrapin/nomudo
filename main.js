@@ -39,11 +39,12 @@ const page = (message) => {
 
 const checkYDL = (done) => {
   fs.ensureDirSync(YDL_PATH);
-  if (fs.accessSync(YDL_BIN_PATH)) {
-    done();
-  } else {
-  console.log('Downloading YDL...');
-    request({url: YDL_URL, method: 'get', encoding: null}).on('response', (err, res) => {
+  try {
+   fs.accessSync(YDL_BIN_PATH);
+   done();
+  } catch(e) {
+    console.log('Downloading YDL...');
+    request({url: YDL_URL, method: 'get', encoding: null}).on('response', (res) => {
       var targetStream = fs.createWriteStream(YDL_BIN_PATH);
       res.pipe(targetStream);
       res.on('end', () => {
