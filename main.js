@@ -3,6 +3,7 @@ const fs = require('fs-extra');
 const request = require('request');
 const bodyParser = require('body-parser');
 const path = require('path');
+const spawn = require('child_process').spawn;
 
 const USER = 'david';
 const PASSWORD = 'nomudopass';
@@ -48,11 +49,11 @@ const checkYDL = (done) => {
   } catch(e) {
     console.log('Downloading YDL...');
     request({url: YDL_URL, method: 'get', encoding: null}).on('response', (res) => {
-      console.log(JSON.stringify(res.headers, ' ', null));
       var targetStream = fs.createWriteStream(YDL_BIN_PATH);
       res.pipe(targetStream);
       res.on('end', () => {
-        console.log('Downloading YDL: done.');
+        console.log(`Downloading YDL: done (size: ${res.headers['content-length']})`);
+        fs.chmodSync(YDL_BIN_PATH, 0755);
         done();
       });
     });
@@ -60,8 +61,22 @@ const checkYDL = (done) => {
 };
 
 const ydl = (url, done) => {
-  console.log('>>' + url);
-  done(null, 'ok?');
+  console.log('Downloading URL: ' + url);
+  var child = spawn(YLD_BIN_PATH, [
+    '--no-color', 
+    '-o', 'downloaded/%(id)s_%(title)s.%(ext)s' 
+  ]);
+  var out = '';
+  var err = '';
+  child.stdout.on('data', (data) => { out += data; });
+  child.stderr.on('data', (data) => { err += data; });
+  child.on('close', (code) => {
+    if (err !== '') {
+      done(err, out);
+    } else {
+      done(null, out);
+    }
+  });
 };
 
 app.get('/', (req, res) => {
@@ -75,11 +90,11 @@ app.post('/', (req, res) => {
   if (req.body.password !== PASSWORD) {
     return res.send(page('Wrong password.'));
   }
-  ydl(req.body.url, (err) => {
+  ydl(req.body.url, (err, out) => {
     if (err) {
-      return res.send(page('YDL Error.'));
+      return res.send(page('YDL Error: ' + err));
     } else {
-      return res.send(page('Downloade started'));
+      return res.send(page('Downloade done: ' + out));
     }
   });;  
 });
