@@ -84,7 +84,7 @@ app.get('/', (req, res) => {
 });
 
 app.post('/', (req, res) => {
-  if (req.body.user !== USER) {
+  if (req.body.username !== USER) {
     return res.send(page('Wrong user.'));
   }
   if (req.body.password !== PASSWORD) {
