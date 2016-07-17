@@ -68,7 +68,7 @@ const ydl = (url, done) => {
   console.log('Downloading URL: ' + url);
   var child = spawn(YDL_BIN_PATH, [
     '--no-color', 
-    '-o', path.resolve(DOWNLOAD_PATH, '%(id)s_%(title)s.%(ext)s')
+    '-o', path.resolve(DOWNLOAD_PATH, '%(id)s_%(title)s.%(ext)s'),
     url
   ]);
   var out = '';
