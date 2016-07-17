@@ -40,11 +40,15 @@ const page = (message) => {
 const checkYDL = (done) => {
   fs.ensureDirSync(YDL_PATH);
   try {
-   fs.accessSync(YDL_BIN_PATH);
-   done();
+    var stat = fs.statSync(YDL_BIN_PATH);
+    if (stat.size === 0) {
+      throw new Error('fle is empty');
+    }
+    done();
   } catch(e) {
     console.log('Downloading YDL...');
     request({url: YDL_URL, method: 'get', encoding: null}).on('response', (res) => {
+      console.log(JSON.stringify(res.headers, ' ', null));
       var targetStream = fs.createWriteStream(YDL_BIN_PATH);
       res.pipe(targetStream);
       res.on('end', () => {
