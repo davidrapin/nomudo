@@ -6,9 +6,9 @@
   "engines": {
     "node": "v4.4.7"
   },
-  "start": "src/main.js",
+  "start": "main.js",
   "scripts": {
-    "start": "src/main.js"
+    "start": "main.js"
   },
   "dependencies": {
     "bluebird": "~3.4.1",
