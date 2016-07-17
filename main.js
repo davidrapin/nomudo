@@ -1,3 +1,5 @@
+'use strict';
+
 const express = require('express');
 const fs = require('fs-extra');
 const request = require('request');
@@ -11,6 +13,7 @@ const PORT = 3030;
 const YDL_URL = 'https://yt-dl.org/downloads/latest/youtube-dl';
 const YDL_PATH = path.resolve(__dirname, 'ydl');
 const YDL_BIN_PATH = path.resolve(__dirname, 'ydl', 'youtube-dl');
+const DOWNLOAD_PATH = path.resolve(__dirname, 'download');
 
 const app = express();
 //app.use(bodyParser.json());
@@ -39,6 +42,7 @@ const page = (message) => {
 };
 
 const checkYDL = (done) => {
+  fs.ensureDirSync(DOWNLOAD_PATH);
   fs.ensureDirSync(YDL_PATH);
   try {
     var stat = fs.statSync(YDL_BIN_PATH);
@@ -62,9 +66,10 @@ const checkYDL = (done) => {
 
 const ydl = (url, done) => {
   console.log('Downloading URL: ' + url);
-  var child = spawn(YLD_BIN_PATH, [
+  var child = spawn(YDL_BIN_PATH, [
     '--no-color', 
-    '-o', 'downloaded/%(id)s_%(title)s.%(ext)s' 
+    '-o', path.resolve(DOWNLOAD_PATH, '%(id)s_%(title)s.%(ext)s')
+    url
   ]);
   var out = '';
   var err = '';
