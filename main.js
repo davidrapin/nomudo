@@ -15,6 +15,8 @@ const YDL_PATH = path.resolve(__dirname, 'ydl');
 const YDL_BIN_PATH = path.resolve(__dirname, 'ydl', 'youtube-dl');
 const DOWNLOAD_PATH = '/home/david/btsync-data/nomudo-files'; //path.resolve(__dirname, 'download');
 const FFMPEG_PATH = path.resolve(__dirname, 'ffmpeg-3.1.1-64bit-static');
+const FFMPEG_URL = 'http://johnvansickle.com/ffmpeg/releases/ffmpeg-release-64bit-static.tar.xz';
+const FFMPEG_ARCHIVE = path.resolve(__dirname, 'ffmpeg.tar.xz');
 
 const app = express();
 //app.use(bodyParser.json());
@@ -48,13 +50,32 @@ const checkYDL = (done) => {
   try {
     var stat = fs.statSync(YDL_BIN_PATH);
     if (stat.size === 0) {
-      throw new Error('fle is empty');
+      throw new Error('file is empty');
     }
     done();
   } catch(e) {
     console.log('Downloading YDL...');
     request({url: YDL_URL, method: 'get', encoding: null}).on('response', (res) => {
       var targetStream = fs.createWriteStream(YDL_BIN_PATH);
+      res.pipe(targetStream);
+      res.on('end', () => {
+        console.log(`Downloading YDL: done (size: ${res.headers['content-length']})`);
+        fs.chmodSync(YDL_BIN_PATH, '755');
+        done();
+      });
+    });
+  }
+};
+
+const checkFFMPEG = (done) => {
+  fs.ensureDirSync(FFMPEG_PATH);
+  try {
+    fs.statSync(FFMPEG_PATH);
+    done();
+  } catch(e) {
+    console.log('Downloading FFMPEG...');
+    request({url: FFMPEG_URL, method: 'get', encoding: null}).on('response', (res) => {
+      var targetStream = fs.createWriteStream(FFMPEG_ARCHIVE);
       res.pipe(targetStream);
       res.on('end', () => {
         console.log(`Downloading YDL: done (size: ${res.headers['content-length']})`);
