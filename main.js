@@ -2,6 +2,7 @@ const express = require('express');
 const fs = require('fs-extra');
 const request = require('request');
 const bodyParser = require('body-parser');
+const path = require('path');
 
 const USER = 'david';
 const PASSWORD = 'nomudopass';
