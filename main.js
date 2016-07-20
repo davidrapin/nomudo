@@ -10,10 +10,11 @@ const spawn = require('child_process').spawn;
 const USER = 'david';
 const PASSWORD = 'nomudopass';
 const PORT = 3030;
+
 const YDL_URL = 'https://yt-dl.org/downloads/latest/youtube-dl';
 const YDL_PATH = path.resolve(__dirname, 'ydl');
 const YDL_BIN_PATH = path.resolve(__dirname, 'ydl', 'youtube-dl');
-const DOWNLOAD_PATH = '/home/david/btsync-data/nomudo-files'; //path.resolve(__dirname, 'download');
+
 const FFMPEG_BIN_PATH = path.resolve(__dirname, 'ffmpeg-3.1.1-64bit-static', 'ffmpeg');
 const FFMPEG_URL = 'http://johnvansickle.com/ffmpeg/releases/ffmpeg-release-64bit-static.tar.xz';
 const FFMPEG_ARCHIVE = path.resolve(__dirname, 'ffmpeg.tar.xz');
@@ -122,6 +123,23 @@ const ydl = (url, done) => {
   });
 };
 
+const getDownloadPath = () => {
+  if (process.argv.length !== 2) {
+    return fatal('Expected exactly one parameter');
+  }
+  var p = path.resolve(process.argv[1]);
+  var stat = fs.statSync(p);
+  if (!stats.isDirectory()) {
+    return fatal('Download directory must be a directory (' + p + ')');
+  }
+  return p;
+};
+
+const fatal = (m) => {
+  console.error('Error: ' + m);
+  process.exit(1);
+};
+
 app.get('/', (req, res) => {
   res.send(page());
 });
@@ -137,22 +155,23 @@ app.post('/', (req, res) => {
     if (err) {
       return res.send(page('YDL Error: ' + err));
     } else {
-      return res.send(page('Downloade done: ' + out));
+      return res.send(page('Download done: ' + out));
     }
-  });;  
+  });
 });
 
+// MAIN ----
+
 console.log('NoMuDo!');
+const DOWNLOAD_PATH = getDownloadPath();
 checkYDL((err) => {
   if (err) { 
-    console.log('Could not install YDL: ' + err);
-    return process.exit();
+    return fatal('Could not install YDL: ' + err);
   }
   
   checkFFMPEG((err) => {
     if (err) { 
-      console.log('Could not install FFMPEG: ' + err);
-      return process.exit();
+      return fatal('Could not install FFMPEG: ' + err);
     }
     
     console.log('Starting Web server ...')
