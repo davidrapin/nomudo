@@ -129,7 +129,7 @@ const getDownloadPath = () => {
   }
   var p = path.resolve(process.argv[1]);
   var stat = fs.statSync(p);
-  if (!stats.isDirectory()) {
+  if (!stat.isDirectory()) {
     return fatal('Download directory must be a directory (' + p + ')');
   }
   return p;
