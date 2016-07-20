@@ -124,10 +124,10 @@ const ydl = (url, done) => {
 };
 
 const getDownloadPath = () => {
-  if (process.argv.length !== 2) {
+  if (process.argv.length !== 3) {
     return fatal('Expected exactly one parameter');
   }
-  var p = path.resolve(process.argv[1]);
+  var p = path.resolve(process.argv[2]);
   var stat = fs.statSync(p);
   if (!stat.isDirectory()) {
     return fatal('Download directory must be a directory (' + p + ')');
