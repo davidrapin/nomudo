@@ -69,7 +69,7 @@ const checkYDL = (done) => {
 };
 
 const checkFFMPEG = (done) => {
-  fs.ensureDirSync(FFMPEG_PATH);
+  //fs.ensureDirSync(FFMPEG_PATH);
   try {
     fs.statSync(FFMPEG_PATH);
     done();
