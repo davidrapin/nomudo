@@ -15,7 +15,7 @@ const YDL_URL = 'https://yt-dl.org/downloads/latest/youtube-dl';
 const YDL_PATH = path.resolve(__dirname, 'ydl');
 const YDL_BIN_PATH = path.resolve(__dirname, 'ydl', 'youtube-dl');
 
-const FFMPEG_BIN_PATH = path.resolve(__dirname, 'ffmpeg-3.1.1-64bit-static', 'ffmpeg');
+const FFMPEG_PATH = path.resolve(__dirname, 'ffmpeg-3.1.1-64bit-static');
 const FFMPEG_URL = 'http://johnvansickle.com/ffmpeg/releases/ffmpeg-release-64bit-static.tar.xz';
 const FFMPEG_ARCHIVE = path.resolve(__dirname, 'ffmpeg.tar.xz');
 
@@ -91,7 +91,6 @@ const checkFFMPEG = (done) => {
             done(err);
           } else {
             console.log('Unpacking FFMPEG... done.');
-            fs.chmodSync(FFMPEG_BIN_PATH, '755');
             done(null);
           }
         });
@@ -108,7 +107,7 @@ const ydl = (url, done) => {
     '-f', 'mp3/mp4/aac/bestaudio',
     '--extract-audio',
     '--audio-format', 'mp3',
-    '--ffmpeg-location', FFMPEG_BIN_PATH,
+    '--ffmpeg-location', FFMPEG_PATH,
     url
   ]);
   var out = '', err = '';
