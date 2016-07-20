@@ -14,7 +14,7 @@ const YDL_URL = 'https://yt-dl.org/downloads/latest/youtube-dl';
 const YDL_PATH = path.resolve(__dirname, 'ydl');
 const YDL_BIN_PATH = path.resolve(__dirname, 'ydl', 'youtube-dl');
 const DOWNLOAD_PATH = '/home/david/btsync-data/nomudo-files'; //path.resolve(__dirname, 'download');
-const FFMPEG_PATH = path.resolve(__dirname, 'ffmpeg-3.1.1-64bit-static');
+const FFMPEG_BIN_PATH = path.resolve(__dirname, 'ffmpeg-3.1.1-64bit-static', 'ffmpeg');
 const FFMPEG_URL = 'http://johnvansickle.com/ffmpeg/releases/ffmpeg-release-64bit-static.tar.xz';
 const FFMPEG_ARCHIVE = path.resolve(__dirname, 'ffmpeg.tar.xz');
 
@@ -78,9 +78,22 @@ const checkFFMPEG = (done) => {
       var targetStream = fs.createWriteStream(FFMPEG_ARCHIVE);
       res.pipe(targetStream);
       res.on('end', () => {
-        console.log(`Downloading YDL: done (size: ${res.headers['content-length']})`);
-        fs.chmodSync(YDL_BIN_PATH, '755');
-        done();
+        console.log(`Downloading FFMPEG: done (size: ${res.headers['content-length']})`);
+        
+        console.log('Unpacking FFMPEG...');
+        var child = spawn('tar', ['-xJf', FFMPEG_ARCHIVE]);
+        var out = '', err = '';
+        child.stdout.on('data', (data) => { out += data; });
+        child.stderr.on('data', (data) => { err += data; });
+        child.on('close', (code) => {
+          if (err !== '') {
+            done(err);
+          } else {
+            console.log('Unpacking FFMPEG... done.');
+            fs.chmodSync(FFMPEG_BIN_PATH, '755');
+            done(null);
+          }
+        });
       });
     });
   }
@@ -94,11 +107,10 @@ const ydl = (url, done) => {
     '-f', 'mp3/mp4/aac/bestaudio',
     '--extract-audio',
     '--audio-format', 'mp3',
-    '--ffmpeg-location', FFMPEG_PATH,
+    '--ffmpeg-location', FFMPEG_BIN_PATH,
     url
   ]);
-  var out = '';
-  var err = '';
+  var out = '', err = '';
   child.stdout.on('data', (data) => { out += data; });
   child.stderr.on('data', (data) => { err += data; });
   child.on('close', (code) => {
@@ -130,9 +142,23 @@ app.post('/', (req, res) => {
   });;  
 });
 
+console.log('NoMuDo!');
 checkYDL((err) => {
-  app.listen(PORT, () => {
-    console.log('nomudo is listening on port ' + PORT);
+  if (err) { 
+    console.log('Could not install YDL: ' + err);
+    return process.exit();
+  }
+  
+  checkFFMPEG((err) => {
+    if (err) { 
+      console.log('Could not install FFMPEG: ' + err);
+      return process.exit();
+    }
+    
+    console.log('Starting Web server ...')
+    app.listen(PORT, () => {
+      console.log('Web server is listening on port ' + PORT);
+    });
   });
 });
 
