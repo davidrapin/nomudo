@@ -8,7 +8,7 @@
   },
   "start": "main.js",
   "scripts": {
-    "start": "main.js"
+    "start": "./main.js"
   },
   "dependencies": {
     "bluebird": "~3.4.1",
@@ -19,7 +19,8 @@
     "request": "~2.73.0",
     "passport": "~0.3.2",
     "passport-local": "~1.0.0",
-    "body-parser": "~1.15.2"
+    "body-parser": "~1.15.2",
+    "cookie-parser": "1.4.3"  
   },
   "devDependencies": {}
 }
