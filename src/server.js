@@ -2,41 +2,54 @@
 'use strict';
 
 // DEPS
-
 const express = require('express');
 const fs = require('fs-extra');
-const request = require('request');
+
 const bodyParser = require('body-parser');
 const path = require('path');
 const cookieParser = require('cookie-parser')
 const spawn = require('child_process').spawn;
 
-// CONSTS
+const Utils = require('./utils');
 
+// CONSTS
 const USER = 'david';
 const PASSWORD = 'nomudopass';
 const COOKIE_SECRET = 'wellyesthiswaseasytoguessiguess';
 const PORT = 3030;
 const JOB_HISTORY_SIZE = 10;
 
-const YDL_URL = 'https://yt-dl.org/downloads/latest/youtube-dl';
-const YDL_PATH = path.resolve(__dirname, 'ydl');
-const YDL_BIN_PATH = path.resolve(__dirname, 'ydl', 'youtube-dl');
 
-const FFMPEG_PATH = path.resolve(__dirname, 'ffmpeg-3.1.1-64bit-static');
-const FFMPEG_URL = 'http://johnvansickle.com/ffmpeg/releases/ffmpeg-release-64bit-static.tar.xz';
-const FFMPEG_ARCHIVE = path.resolve(__dirname, 'ffmpeg.tar.xz');
 
+// load options
+const optionsPath = path.resolve(_dirname, '..', 'default-options.json');
+const options = require(optionsPath);
+for (let user of options.users) {
+  if (!user.root) {
+    // default root
+    user.root = './';
+  } else if (!path.isAbsolute(user.root)) {
+    // make root absolute
+    user.root = path.resolve(path.parse(optionsPath).dir, user.root);
+  }
+  
+  var stat = fs.statSync(user.root);
+  if (!stat.isDirectory()) {
+    return Utils.fatal(`Download directory must be a directory (${user.root})`);
+  }
+  
+  jlog(user, 'user');
+}
+
+/*
 // STATE
-
 const state = {
   // {url:string, progress:number, out: string[], err: string[]}
-  jobs: new Map(),
+  jobs: new Array(),
   sessionStore: new Map()
 };
 
 // PAGES
-
 const page = (req, message) => {
   if (!message) { message = ''; }
   const user = getUser(req);
@@ -53,7 +66,7 @@ const page = (req, message) => {
       <div style="color:#ccc;">
       
         <div class="job">
-        ${Array.from(state.jobs.values()).reverse().map((j) => {
+        ${state.jobs.reverse().map((j) => {
           return `
             <span class="progress">${j.progress}</span>
             <span class="url">${j.url}</span>
@@ -109,72 +122,64 @@ const page = (req, message) => {
     <pre style="font-weight:bold; color:#f00;">${message}</pre>
   </html>`;
 };
+*/
 
 // SERVER
 const app = express();
-//app.use(bodyParser.json());
+app.use(bodyParser.json());
 app.use(cookieParser(COOKIE_SECRET));
-app.use(bodyParser.urlencoded({extended: true}));
+//app.use(bodyParser.urlencoded({extended: true}));
+
+class UserState {
+  constructor(name) {
+    this.name = name;
+    this.jobs = [];
+  }
+}
+
+// STATE
+const sessionStore = new Map();
+app.use((req, res, next) => {
+
+  /**
+   * returns {UserState}
+   */
+  req.getUser = function() {
+    //console.log('session: ' + req.cookies['nomudo-session']);
+    //console.log('cookie: ' + req.headers.cookie);
+    if (req.cookies && req.cookies['nomudo-session']) {
+      return sessionStore.get(req.cookies['nomudo-session']);
+    }
+    return undefined;
+  };
+
+  /**
+   * @param {string} username
+   */
+  res.setUser = function(username) {
+    let userState = req.getUser();
+    if (userState) {
+      log(`already logged in (${username})`);
+      return;
+    }
+    
+    userState = Array.from(sessionStore.values()).find(userState => userState.name === username);
+    if (userState) {
+      log(`creating new session for existing state (${username})`);
+    } else {
+      log(`creating new session with fresh state (${username})`);
+      userState = new UserState(username);
+    }
+    
+    const sessionKey = 'ns-' + (Math.random() + '').substr(2);
+    res.cookie('nomudo-session', sessionKey, {httpOnly: true}); // , signed: true
+    state.sessionStore.set(sessionKey, userState);
+  };
+});
+
 
 // FUNCTIONS
-const checkYDL = (done) => {
-  fs.ensureDirSync(DOWNLOAD_PATH);
-  fs.ensureDirSync(YDL_PATH);
-  try {
-    var stat = fs.statSync(YDL_BIN_PATH);
-    if (stat.size === 0) {
-      throw new Error('file is empty');
-    }
-    done();
-  } catch(e) {
-    console.log('Downloading YDL...');
-    request({url: YDL_URL, method: 'get', encoding: null}).on('response', (res) => {
-      var targetStream = fs.createWriteStream(YDL_BIN_PATH);
-      res.pipe(targetStream);
-      res.on('end', () => {
-        console.log(`Downloading YDL: done (size: ${res.headers['content-length']})`);
-        fs.chmodSync(YDL_BIN_PATH, '755');
-        done();
-      });
-    });
-  }
-};
 
-const checkFFMPEG = (done) => {
-  //fs.ensureDirSync(FFMPEG_PATH);
-  try {
-    fs.statSync(FFMPEG_PATH);
-    done();
-  } catch(e) {
-    console.log('Downloading FFMPEG...');
-    request({url: FFMPEG_URL, method: 'get', encoding: null}).on('response', (res) => {
-      var targetStream = fs.createWriteStream(FFMPEG_ARCHIVE);
-      res.pipe(targetStream);
-      res.on('end', () => {
-        console.log(`Downloading FFMPEG: done (size: ${res.headers['content-length']})`);
-        
-        console.log('Unpacking FFMPEG...');
-        var child = spawn('tar', ['-xJf', FFMPEG_ARCHIVE]);
-        var out = '', err = '';
-        child.stdout.on('data', (data) => { out += data; });
-        child.stderr.on('data', (data) => { err += data; });
-        child.on('close', (code) => {
-          if (err !== '') {
-            done(err);
-          } else {
-            console.log('Unpacking FFMPEG... done.');
-            done(null);
-          }
-        });
-      });
-    });
-  }
-};
-
-const updateBinary = (done) => {
-  console.log('Updating binary');
-  runBin(YDL_BIN_PATH, ['-U'], done);
-}
 
 const ydl = (url) => {
   let conflict = state.jobs.get(url);
@@ -237,64 +242,11 @@ function finishJob(url, out, err) {
   }
 }
 
-function runBin(binPath, binArgs, done, progress) {
-  var child = spawn(binPath, binArgs);
-  var out = '', err = '';
-  
-  const emitProgress = (str) => {
-    if (typeof progress === 'function') {
-    
-      // match "XXX.XX%" progression strings
-      const r = /.*\s(\d{1,3}(?:\.\d{1,2})?%).*/g;
-      let m, p = null;
-      while (m = r.exec(str)) {
-        p = m[1];
-      }
-      if (p != null) {
-        progress(p);
-      }
-    }
-  };
-  
-  child.stdout.on('data', (data) => {
-    out += data;
-    emitProgress(out);
-  });
-  
-  child.stderr.on('data', (data) => {
-    err += data;
-    emitProgress(err);
-  });
-  
-  child.on('close', (code) => {
-    if (err !== '') {
-      done(err, out);
-    } else {
-      done(null, out);
-    }
-  });
-}
-
-const getDownloadPath = () => {
-  if (process.argv.length !== 3) {
-    return fatal('Expected exactly one parameter');
-  }
-  var p = path.resolve(process.argv[2]);
-  var stat = fs.statSync(p);
-  if (!stat.isDirectory()) {
-    return fatal('Download directory must be a directory (' + p + ')');
-  }
-  return p;
-};
-
-const fatal = (m) => {
-  console.error('Error: ' + m);
-  process.exit(1);
-};
-
 // ROUTES
+const root = path.resolve(__dirname, 'public');
+app.use(serveStatic(root));
 
-app.get('/', (req, res) => {
+app.post('/api/login', (req, res) => {
   res.send(page(req));
 });
 
@@ -339,23 +291,6 @@ app.post('/', (req, res) => {
   return res.send(page(req, 'unknown action: ' + action));
 });
 
-// SESSION MANAGEMENT
-
-function setUser(res, username) {
-  //console.log('setuser: ' + username);
-  const sessionKey = 'ns-' + (Math.random() + '').substr(2);
-  res.cookie('nomudo-session', sessionKey, {httpOnly: true}); // , signed: true
-  state.sessionStore.set(sessionKey, username);
-}
-
-function getUser(req) {
-  //console.log('session: ' + req.cookies['nomudo-session']);
-  //console.log('cookie: ' + req.headers.cookie);
-  if (req.cookies && req.cookies['nomudo-session']) {
-    return state.sessionStore.get(req.cookies['nomudo-session']);
-  }
-  return undefined;
-}
 
 
 // MAIN ----

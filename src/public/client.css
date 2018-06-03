@@ -1,0 +1,14 @@
+
+.job {
+  border-top: 1px solid #666; 
+}
+
+.job > .out {
+  font-family: monospace;
+  white-space: pre;
+}
+
+.job > .progress {
+  font-weight: bold;
+  color: #666;
+}
