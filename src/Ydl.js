@@ -16,6 +16,44 @@ const FFMPEG_PATH = path.resolve(__dirname, '..', 'ffmpeg-3.1.1-64bit-static');
 const FFMPEG_URL = 'http://johnvansickle.com/ffmpeg/releases/ffmpeg-release-64bit-static.tar.xz';
 const FFMPEG_ARCHIVE = path.resolve(__dirname, '..', 'ffmpeg.tar.xz');
 
+class Job {
+
+  constructor() {
+    this.running = false;
+    this.start = null;
+    this.end = null;
+    this.progress = 'starting';
+    this.out = '';
+    this.err = '';
+  }
+  
+  start() {
+    this.running = true;
+    this.start = Date.now();
+  }
+  
+  finish(err, out) {
+    this.running = false;
+    this.end = Date.now();
+    this.out = out;
+    this.err = err;
+    if (err) {
+      this.progress = 'failure';
+    } else {
+      this.progress = 'success';
+    }
+  }
+}
+
+class DownloadJob extends Job {
+
+  constructor(url) {
+    super();
+    this.url = url;
+  }
+  
+}
+
 class Ydl {
 
   /**
@@ -157,6 +195,36 @@ class Ydl {
       });
     });
   }
+  
+  download(url, targetFolder) {
+    // let conflict = state.jobs.get(url);
+    // if (conflict && conflict.running) {
+    //  throw new Error(`Job already running: "${url}`);
+    // }
+    const job = new DownloadJob(url);
+    job.start();
+    
+    return new Promise((resolve, reject) => {
+      this.runBin(YDL_BIN_PATH, [
+        '--no-color', 
+        '-o', path.resolve(targetFolder, '_%(title)s.%(ext)s'),
+        '-f', 'mp3/mp4/aac/bestaudio',
+        '--extract-audio',
+        '--audio-format', 'mp3',
+        '--ffmpeg-location', FFMPEG_PATH,
+        url
+      ], (err, out) => {
+      
+        job.finish(err, out);
+        resolve();
+      
+      }, (progress) => {
+        //Utils.log(url + ' =progress=> ' + progress);
+        job.progress = progress;
+      });
+    });
+  }
+
 }
 
 module.exports = new Ydl();

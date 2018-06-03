@@ -11,6 +11,7 @@ const cookieParser = require('cookie-parser')
 const spawn = require('child_process').spawn;
 
 const Utils = require('./utils');
+const Ydl = require('./Ydl');
 
 // CONSTS
 const USER = 'david';
@@ -181,30 +182,6 @@ app.use((req, res, next) => {
 // FUNCTIONS
 
 
-const ydl = (url) => {
-  let conflict = state.jobs.get(url);
-  if (conflict && conflict.running) {
-    throw new Error(`Job already running: "${url}`);
-  }
-  
-  const status = startJob(url);
-  
-  runBin(YDL_BIN_PATH, [
-    '--no-color', 
-    '-o', path.resolve(DOWNLOAD_PATH, '_%(id)s_%(title)s.%(ext)s'),
-    '-f', 'mp3/mp4/aac/bestaudio',
-    '--extract-audio',
-    '--audio-format', 'mp3',
-    '--ffmpeg-location', FFMPEG_PATH,
-    url
-  ], (err, out) => {
-    finishJob(url, out, err);
-  
-  }, (progress) => {
-    console.log(url + ' =progress=> ' + progress);
-    status.progress = progress;
-  });
-};
 
 function startJob(url) {
   console.log('Downloading URL: ' + url);
@@ -226,20 +203,6 @@ function startJob(url) {
   }
   
   return jobStatus;
-}
-
-function finishJob(url, out, err) {
-  const status = state.jobs.get(url);
-  if (!status) { return; }
-  status.running = false;
-  status.end = Date.now();
-  status.out = out;
-  status.err = err;
-  if (err) {
-    status.progress = 'failure';
-  } else {
-    status.progress = 'success';
-  }
 }
 
 // ROUTES
@@ -295,22 +258,10 @@ app.post('/', (req, res) => {
 
 // MAIN ----
 
-console.log('NoMuDo!');
-const DOWNLOAD_PATH = getDownloadPath();
-checkYDL((err) => {
-  if (err) { 
-    return fatal('Could not install YDL: ' + err);
-  }
-  
-  checkFFMPEG((err) => {
-    if (err) { 
-      return fatal('Could not install FFMPEG: ' + err);
-    }
-    
-    console.log('Starting Web server ...')
-    app.listen(PORT, () => {
-      console.log('Web server is listening on port ' + PORT);
-    });
+Utils.log('NoMuDo!');
+Ydl.check().then(() => {
+  Utils.log('Starting Web server ...')
+  app.listen(PORT, () => {
+    console.log('Web server is listening on port ' + PORT);
   });
 });
-
