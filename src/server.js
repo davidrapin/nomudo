@@ -182,7 +182,7 @@ app.use((req, res, next) => {
 // FUNCTIONS
 
 
-
+/*
 function startJob(url) {
   console.log('Downloading URL: ' + url);
   
@@ -204,6 +204,7 @@ function startJob(url) {
   
   return jobStatus;
 }
+*/
 
 // ROUTES
 const root = path.resolve(__dirname, 'public');
@@ -223,18 +224,18 @@ app.post('/', (req, res) => {
     if (req.body.password !== PASSWORD) {
       return res.send(page(req, 'wrong credentials'));
     }
-    setUser(res, req.body.username);
+    res.setUser(req.body.username);
     return res.redirect('/');
   }
   
   // further actions require login
-  if (getUser(req) === undefined) {
+  if (req.getUser(req) === undefined) {
     return res.send(page(req, 'credentials required'));
   }
   
   if (action === 'download') {
     try {
-      ydl(req.body.url);
+      Ydl.download(req.body.url, './TODO/');
       return res.send(page(req, 'Job added'));
     } catch(e) {
       return res.send(page(req, 'Error: ' + e.message));
@@ -242,7 +243,7 @@ app.post('/', (req, res) => {
   }
   
   if (action === 'update') {
-    return updateBinary((err, out) => {
+    return Ydl.updateBinary((err, out) => {
       if (err) {
         return res.send(page(req, 'Error: ' + err));
       } else {
