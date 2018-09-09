@@ -1,14 +1,90 @@
 
-.job {
-  border-top: 1px solid #666; 
-}
-
-.job > .out {
+body {
   font-family: monospace;
-  white-space: pre;
+  margin: 5px;
 }
 
-.job > .progress {
+input {
+  height: 22px;
+  font-size: 16px;
+  border: 1px solid #666;
+}
+
+input#url {
+  width: 220px;
+}
+
+.job {
+  border-bottom: 1px solid #666; 
+  margin-bottom: 15px;
+  width: 100%;
+  positon: relative;
+}
+
+div.line {
+  positon: relative;
+  width: 100%;
+  /*border: 1px solid red;*/
+}
+
+div.line::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+div.w80  {
+  float: left;
+  width: 72%;
+}
+
+div.w20  {
+  float: left;
+  width: 28%;
+}
+
+.job .out {
+  white-space: pre;
+  display: block;
+  positon: relative;
+}
+
+.job .progress {
   font-weight: bold;
   color: #666;
+  display: inline-block;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin: 2px 0px;
+  padding: 0px 4px;
 }
+
+.job .progress.success {
+  color: green;
+}
+.job .progress.failure {
+  color: #ba3b0d;
+}
+
+.job .date  {
+  display: block;
+}
+
+.job .name {
+  color: green;
+  display: block;
+}
+
+.job .url {
+  color: #1e365e;
+}
+
+.retry-link {
+  color: #ba3b0d;
+}
+
+.links {
+  display: inline-block;
+  float: right;
+}
+

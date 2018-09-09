@@ -1,268 +1,284 @@
 #!/usr/bin/env node
 'use strict';
 
-// DEPS
-const express = require('express');
-const fs = require('fs-extra');
-
-const bodyParser = require('body-parser');
 const path = require('path');
-const cookieParser = require('cookie-parser')
 const spawn = require('child_process').spawn;
 
+// libs
+const express = require('express');
+const fs = require('fs-extra');
+const Promise = require('bluebird');
+const bodyParser = require('body-parser');
+const serveStatic = require('serve-static');
+const cookieParser = require('cookie-parser')
+
+// deps
 const Utils = require('./utils');
 const Ydl = require('./Ydl');
 
-// CONSTS
-const USER = 'david';
-const PASSWORD = 'nomudopass';
-const COOKIE_SECRET = 'wellyesthiswaseasytoguessiguess';
-const PORT = 3030;
-const JOB_HISTORY_SIZE = 10;
-
-
+const COOKIE_SECRET = Math.floor(Math.random() * 10000) + '_cookie_secret';
 
 // load options
-const optionsPath = path.resolve(_dirname, '..', 'default-options.json');
-const options = require(optionsPath);
-for (let user of options.users) {
-  if (!user.root) {
-    // default root
-    user.root = './';
-  } else if (!path.isAbsolute(user.root)) {
-    // make root absolute
-    user.root = path.resolve(path.parse(optionsPath).dir, user.root);
+class User {
+  constructor(user, defaultAbsRoot, baseDir) {
+    this.username = user.username;
+    this.password = user.password;
+    this.root = user.root;
+    this.jobs = (user.jobs || []).map(job => Ydl.parseJob(job));
+    
+    this.absRoot = Utils.absDir(user.root, defaultAbsRoot, baseDir);
+    var stat = fs.statSync(this.absRoot);
+    if (!stat.isDirectory()) {
+      return Utils.fatal(`Download directory must be a directory (${this.absRoot})`);
+    }
+    
+    Utils.jlog({username: this.username, root: this.absRoot}, 'user');
   }
   
-  var stat = fs.statSync(user.root);
-  if (!stat.isDirectory()) {
-    return Utils.fatal(`Download directory must be a directory (${user.root})`);
+  asPublic() {
+    return {
+      username: this.username, 
+      root: this.absRoot,
+      jobs: this.jobs.map(j => j.asPublic())
+    }
   }
   
-  jlog(user, 'user');
+  serialize() {
+    return {
+      username: this.username,
+      password: this.password,
+      root: this.root,
+      jobs: this.jobs.map(j => j.asPublic())
+    };
+  }
 }
 
-/*
-// STATE
-const state = {
-  // {url:string, progress:number, out: string[], err: string[]}
-  jobs: new Array(),
-  sessionStore: new Map()
-};
+class Options {
+  constructor(optionsPath) {
+    // path
+    this.path = optionsPath || path.resolve(__dirname, '..', 'default-options.json');
+    const stat = fs.statSync(this.path);
+    if (!stat.isFile()) {
+      Utils.fatal(`"${this.path}" must be an existing file`);
+    }
+    
+    this.parse(require(this.path));
+  }
+  
+  parse(options) {
+    const baseDir = path.parse(this.path).dir;
+    
+    this.port = options.port || 3030;
+    this.root = options.root;
+    this.absRoot = Utils.absDir(options.root, '.', baseDir);
+    this.users = options.users.map(u => new User(u, this.absRoot, baseDir));
+  }
+  
+  save() {
+    const options = {
+      root: this.root,
+      port: this.port,
+      users: this.users.map(u => u.serialize())
+    }
+    Utils.log('Saving state...');
+    fs.writeFileSync(this.path, JSON.stringify(options, null, '  '));
+    Utils.log('State saved OK.');
+  }
+}
 
-// PAGES
-const page = (req, message) => {
-  if (!message) { message = ''; }
-  const user = getUser(req);
-  let form = '';
+// State
+class State {
+  constructor() {
+    // key: cookie (string)
+    // value: user (User)
+    this.sessions = new Map();
+    
+    this.cookieName = 'nomudo-session';
+  }
   
-  if (user !== undefined) {
-    form = `
-      <form action="/" method="post">
-        <input type="hidden" name="action" value="download" />
-        <div>
-          <label for="url">URL:</label><input type="text" name="url"/> <input type="submit" value="download"/>
-        </div>
-      </form>
-      <div style="color:#ccc;">
-      
-        <div class="job">
-        ${state.jobs.reverse().map((j) => {
-          return `
-            <span class="progress">${j.progress}</span>
-            <span class="url">${j.url}</span>
-            <span class="date">${new Date(j.start)}</span>
-            <span class="out">${j.running ? (j.err ? j.err : j.out) : ''}</span> 
-          `;  
-        }).join('</div><div class="job">')}
-        </div>
-        
-        download path: ${DOWNLOAD_PATH}<br>
-        <form action="/" method="post">
-          <input type="hidden" name="action" value="update" />
-          <input type="submit" value="update binary"/>
-        </form>
-      </div>
-    `;
-    
-  } else {
-    form = `
-      <form action="/" method="post">
-        <input type="hidden" name="action" value="login" />
-        <div>
-            <label for="username">Username:</label><input type="text" name="username"/>
-        </div>
-        <div>
-            <label for="password">Password:</label><input type="password" name="password"/>
-        </div>
-        <div>
-            <input type="submit" value="login"/>
-        </div>
-      </form>
-    `;
-  } 
+  patchReq(req) {
+    req.getUser = () => this.getCurrentUser(req);
+  }
   
-  return `<html>
-    <style>
-    .job {
-      border-top: 1px solid #666;
-      
+  /**
+   * @param {} request
+   * @returns {User}
+   */
+  getCurrentUser(request) {
+    if (!request.cookies) {
+      Utils.log('no cookies in this request');
+      return undefined;
     }
-    .job > .out {
-      font-family: monospace;
-      white-space: pre;
-    }
-    .job > .progress {
-      font-weight: bold;
-      color: #666;
-    }
-    </style>
+  
+    const sessionKey = request.cookies[this.cookieName];
+    if (!sessionKey) { return undefined; }
     
-    ${form}
+    return this.sessions.get(sessionKey);
+  }
+  
+  /**
+   * @param {} request
+   * @param {} response
+   * @param {user} user 
+   * @returns {User}
+   */
+  setCurrentUser(request, response, user) {
+    if (user === undefined) {
+      this._logout(request, response);
+      return;
+    }
     
-    <pre style="font-weight:bold; color:#f00;">${message}</pre>
-  </html>`;
-};
-*/
+    let currentUser = this.getCurrentUser(request);
+    if (currentUser) {
+      Utils.log(`already logged in as "${currentUser.username}"`);
+      return currentUser;
+    }
+    
+    const sessionKey = 'ns-' + (Math.random() + '').substr(2);
+    response.cookie(this.cookieName, sessionKey, {httpOnly: true}); // , signed: true
+    this.sessions.set(sessionKey, user);
+    return user;
+  }
+  
+  _logout(request, response) {
+    if (!request.cookies) {
+      Utils.log('logout: no cookies in this request');
+      return undefined;
+    }
+  
+    const sessionKey = request.cookies[this.cookieName];
+    if (!sessionKey) { return undefined; }
+    
+    const user = this.sessions.get(sessionKey);
+    if (!user) { return undefined; }
+    
+    Utils.log(`logging out user ${user.username}`);
+    this.sessions.delete(sessionKey);
+    response.clearCookie(this.cookieName);
+  }
+}
+
+
+// Access
+class Access {
+  constructor(options, state) {
+    this.options = options;
+    this.state = state;
+  }
+
+  findUser(username, password) {
+    for (let user of this.options.users) {
+      if (user.username === username && user.password === password) {
+        return user;
+      }
+    }
+    return undefined;
+  }
+  
+  /**
+   * @param {string} username
+   * @param {string} password
+   * @returns {User}
+   */
+  login(req, res, username, password) {
+    const user = this.findUser(username, password);
+    if (!user) { return undefined; }
+    return this.state.setCurrentUser(req, res, user);
+  }
+  
+  logout(req, res) {
+    return this.state.setCurrentUser(req, res, undefined);
+  }
+  
+  me(req) {
+    return req.getUser();
+  }
+}
 
 // SERVER
 const app = express();
 app.use(bodyParser.json());
 app.use(cookieParser(COOKIE_SECRET));
-//app.use(bodyParser.urlencoded({extended: true}));
-
-class UserState {
-  constructor(name) {
-    this.name = name;
-    this.jobs = [];
-  }
-}
-
-// STATE
-const sessionStore = new Map();
-app.use((req, res, next) => {
-
-  /**
-   * returns {UserState}
-   */
-  req.getUser = function() {
-    //console.log('session: ' + req.cookies['nomudo-session']);
-    //console.log('cookie: ' + req.headers.cookie);
-    if (req.cookies && req.cookies['nomudo-session']) {
-      return sessionStore.get(req.cookies['nomudo-session']);
-    }
-    return undefined;
-  };
-
-  /**
-   * @param {string} username
-   */
-  res.setUser = function(username) {
-    let userState = req.getUser();
-    if (userState) {
-      log(`already logged in (${username})`);
-      return;
-    }
-    
-    userState = Array.from(sessionStore.values()).find(userState => userState.name === username);
-    if (userState) {
-      log(`creating new session for existing state (${username})`);
-    } else {
-      log(`creating new session with fresh state (${username})`);
-      userState = new UserState(username);
-    }
-    
-    const sessionKey = 'ns-' + (Math.random() + '').substr(2);
-    res.cookie('nomudo-session', sessionKey, {httpOnly: true}); // , signed: true
-    state.sessionStore.set(sessionKey, userState);
-  };
-});
-
-
-// FUNCTIONS
-
-
-/*
-function startJob(url) {
-  console.log('Downloading URL: ' + url);
-  
-  const jobStatus = {
-    url: url,
-    running: true,
-    start: Date.now(),
-    end: undefined,
-    progress: 'starting',
-    out: '',
-    err: ''
-  };
-  state.jobs.set(url, jobStatus);
-  
-  while (state.jobs.size > JOB_HISTORY_SIZE) {
-    const oldestKey = state.jobs.keys();
-    state.jobs.delete(oldestKey);
-  }
-  
-  return jobStatus;
-}
-*/
 
 // ROUTES
 const root = path.resolve(__dirname, 'public');
 app.use(serveStatic(root));
 
-app.post('/api/login', (req, res) => {
-  res.send(page(req));
+app.use((req, res, next) => {
+  state.patchReq(req);
+  next();
 });
 
-app.post('/', (req, res) => {
-  const action = req.body ? req.body.action : '';
-
-  if (action === 'login') {
-    if (req.body.username !== USER) {
-      return res.send(page(req, 'wrong credentials'));
-    }
-    if (req.body.password !== PASSWORD) {
-      return res.send(page(req, 'wrong credentials'));
-    }
-    res.setUser(req.body.username);
-    return res.redirect('/');
+app.post('/api/auth/login', (req, res) => {
+  const user = access.login(req, res, req.body.username, req.body.password);
+  if (user) {
+    res.status(200).json(user.asPublic());
+  } else {
+    res.status(401).json({error: 'wrong credentials'});
   }
-  
-  // further actions require login
-  if (req.getUser(req) === undefined) {
-    return res.send(page(req, 'credentials required'));
-  }
-  
-  if (action === 'download') {
-    try {
-      Ydl.download(req.body.url, './TODO/');
-      return res.send(page(req, 'Job added'));
-    } catch(e) {
-      return res.send(page(req, 'Error: ' + e.message));
-    }
-  }
-  
-  if (action === 'update') {
-    return Ydl.updateBinary((err, out) => {
-      if (err) {
-        return res.send(page(req, 'Error: ' + err));
-      } else {
-        return res.send(page(req, 'Binary updated'));
-      }
-    });
-  }
-  
-  return res.send(page(req, 'unknown action: ' + action));
 });
 
+app.post('/api/auth/logout', (req, res) => {
+  access.logout(req, res);
+  res.status(204).end();
+});
 
+app.get('/api/auth/me', (req, res) => {
+  const user = req.getUser();
+  if (user) {
+    res.status(200).json(user.asPublic());
+  } else {
+    res.status(401).json({error: 'no current user'});
+  }
+});
+
+app.all('/api/ydl/*', (req, res, next) => {
+  const user = req.getUser();
+  if (!user) {
+    return res.status(401).json({error: 'auth required'});
+  } else {
+    next();
+  }
+});
+
+app.post('/api/ydl/update', (req, res) => {
+  return Ydl.update().then(() => {
+    res.status(200).json({result: 'Binary updated'});
+  }).catch(err => {
+    res.status(500).json({error: err.stack});
+  });
+});
+
+app.post('/api/ydl/download', (req, res) => {
+  try {
+    const user = req.getUser();
+    const job = Ydl.download(req.body.url, user.absRoot);
+    user.jobs.push(job);
+    res.status(200).json({result: 'Job added'});
+  } catch (err) {
+    res.status(500).json({error: err.stack});
+  }
+});
 
 // MAIN ----
 
 Utils.log('NoMuDo!');
+
+const options = new Options(process.argv[2]);
+const state = new State();
+const access = new Access(options, state);
+
+//process.on('exit', (code) => options.save());
+//process.on('SIGTERM', (code) => options.save());
+process.on('SIGINT', () => {
+  console.log('');
+  options.save();
+  process.exit(0);
+});
+
 Ydl.check().then(() => {
   Utils.log('Starting Web server ...')
-  app.listen(PORT, () => {
-    console.log('Web server is listening on port ' + PORT);
+  app.listen(options.port, () => {
+    Utils.log('Web server is listening on port ' + options.port);
   });
 });
