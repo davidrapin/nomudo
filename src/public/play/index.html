@@ -1,0 +1,46 @@
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1" >
+  
+  <script type="text/javascript" src="./jquery.js"></script>
+  <link rel="stylesheet" href="./foundation.min.css"/>
+  <link href="https://fonts.googleapis.com/css?family=Lato:400,400i" rel="stylesheet">
+  <script type="text/javascript" src="./foundation.min.js"></script>
+
+  
+  <script src="/amplitude.js"></script>
+  <link rel="stylesheet" href="./amplitude.css"/>
+  <link rel="stylesheet" href="./player.css" >
+  <script src="../app.js"></script>
+  <script src="./player.js"></script>
+  
+</head>
+<body>
+  <div id="black-player">
+    <div id="black-player-playlist">Loading...</div>
+    <div id="black-player-controls">
+      <!--img amplitude-song-info="cover_art_url" class="playlist-album-art"/-->
+      <div class="black-player-controls-container">
+        <span amplitude-song-info="name" amplitude-main-song-info="true" class="song-name"></span>
+        <!--span amplitude-song-info="artist" amplitude-main-song-info="true" class="song-artist"></span-->
+		(<span class="amplitude-current-time" amplitude-main-current-time="true"></span> / <span class="amplitude-duration-time" amplitude-main-duration-time="true"></span>)
+
+        <div id="progress-container-black">
+          <input type="range" step="0.001" class="amplitude-song-slider" amplitude-main-song-slider="true" />
+          <progress id="song-played-progress-black" class="amplitude-song-played-progress" amplitude-main-song-played-progress="true"></progress>
+          <progress id="song-buffered-progress-black" class="amplitude-buffered-progress" value="0"></progress>
+        </div>
+
+        <div>
+          <div class="amplitude-shuffle amplitude-shuffle-off" id="shuffle-black"></div>
+          <div class="amplitude-prev" id="previous-black"></div>
+          <div class="amplitude-play-pause" amplitude-main-play-pause="true" id="play-pause-black"></div>
+          <div class="amplitude-next" id="next-black"></div>
+          <div class="amplitude-repeat" id="repeat-black"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+    
+</body>
+</html>

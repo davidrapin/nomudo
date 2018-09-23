@@ -11,12 +11,14 @@ const Promise = require('bluebird');
 const bodyParser = require('body-parser');
 const serveStatic = require('serve-static');
 const cookieParser = require('cookie-parser')
+const readdirP = Promise.promisify(fs.readdir);
 
 // deps
 const Utils = require('./utils');
 const Ydl = require('./Ydl');
 
 const COOKIE_SECRET = Math.floor(Math.random() * 10000) + '_cookie_secret';
+const AMPLITUDE_PATH = path.resolve(__dirname, '..', 'node_modules', 'amplitudejs', 'dist', 'amplitude.js');
 
 // load options
 class User {
@@ -32,7 +34,15 @@ class User {
       return Utils.fatal(`Download directory must be a directory (${this.absRoot})`);
     }
     
+    this.serveStatic = serveStatic(this.absRoot, {});
+    
     Utils.jlog({username: this.username, root: this.absRoot}, 'user');
+  }
+  
+  listFiles(extension) {
+    return readdirP(this.absRoot).then((items) => {
+      return items.filter(f => f.endsWith('.' + extension))
+    });
   }
   
   asPublic() {
@@ -209,6 +219,10 @@ app.use((req, res, next) => {
   next();
 });
 
+app.get('/amplitude.js', (req, res) => {
+  res.sendFile(AMPLITUDE_PATH);
+});
+
 app.post('/api/auth/login', (req, res) => {
   const user = access.login(req, res, req.body.username, req.body.password);
   if (user) {
@@ -258,6 +272,30 @@ app.post('/api/ydl/download', (req, res) => {
   } catch (err) {
     res.status(500).json({error: err.stack});
   }
+});
+
+app.all('/api/file*', (req, res, next) => {
+  const user = req.getUser();
+  if (!user) {
+    return res.status(401).json({error: 'auth required'});
+  } else {
+    next();
+  }
+});
+
+app.get('/api/files', (req, res) => {
+  const user = req.getUser();
+  user.listFiles('mp3').then((files) => {
+    res.status(200).json({result: files.map(f => `/api/file/${f}`)});
+  }).catch((e) => {
+    res.status(500).json({error: err.stack});
+  });
+});
+
+app.get('/api/file/*', (req, res, next) => {
+  const user = req.getUser();
+  req.url = req.url.substr('/api/file'.length);
+  user.serveStatic(req, res, next);
 });
 
 // MAIN ----

@@ -21,7 +21,8 @@
     "passport-local": "1.0.0",
     "body-parser": "~1.15.2",
 	"serve-static": "1.13.2",
-	"cookie-parser": "1.4.3"  
+	"cookie-parser": "1.4.3",
+	"amplitudejs": "3.3.1"
   },
   "devDependencies": {}
 }
