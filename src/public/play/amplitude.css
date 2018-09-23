@@ -1,52 +1,88 @@
+/* fondation */
 
-/*
-  Black Player
-*/
+*, ::before, ::after {
+  box-sizing: inherit;
+}
+
+html {
+  box-sizing: border-box;
+  font-size: 100%;
+}
+
+body {
+  font-family: "Helvetica Neue",Helvetica,Roboto,Arial,sans-serif;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #0a0a0a;
+  -webkit-font-smoothing: antialiased;
+}
+
+body, div {
+  margin: 0;
+  padding: 0;
+}
+
+/* Black Player */
+
 div#black-player {
   width: 100%;
-  /*height: 100vh;*/
-  /*max-width: 375px;*/
   background-color: #333333;
-  box-shadow: 0px 12px 24px rgba(0, 0, 0, 0.12);
-  font-family: "Lato", sans-serif;
-  margin: auto;
-  /*margin-right: 50px;*/
-  /*margin-top: 50px;*/
 }
 
 div#black-player-playlist {
-  height: calc(100vh - 130px);
-  overflow-y: scroll;
+  border-bottom: 120px solid #fff;
 }
+
 div#black-player-controls {
-  height: 130px;
+  position: fixed;
+  bottom: 0px;
+  left: 0px;
+  width: 100%;
+  height: 120px;
+  background: #444;
+  padding-top: 10px;
 }
+
 /*div#black-player-controls img.playlist-album-art {
   float: left;
   width: 130px;
   height: 130px;
 }*/
+
+
 div#black-player-controls div.black-player-controls-container {
-  /*float: left;*/
-  /*width: calc( 100% - 150px );*/
-  width: calc(100% - 20px);
-  margin-left: 20px;
+  margin-left: 10px;
+  margin-right: 10px;
   text-align: center;
 }
+
+
+div#black-player-controls div.black-player-controls-container  div#song-info {
+  height: 20px;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 div#black-player-controls div.black-player-controls-container span.song-name {
   display: block;
-  color: white;
+  height: 100%;
+  width: 100%;
+  
   font-size: 14px;
-  text-align: left;
+  text-align: center;
+  
 }
-div#black-player-controls div.black-player-controls-container span.song-artist {
+
+/*div#black-player-controls div.black-player-controls-container span.song-artist {
   display: block;
   color: rgba(255, 255, 255, 0.7);
   font-size: 14px;
   text-align: left;
-}
+}*/
+
 div#black-player-controls div.black-player-controls-container div#progress-container-black {
-  margin-right: 20px;
+  /*margin-right: 20px;*/
   position: relative;
   height: 20px;
   cursor: pointer;
@@ -283,14 +319,32 @@ div#black-player-controls div.black-player-controls-container div#progress-conta
 div#black-player-controls div.black-player-controls-container div#progress-container-black input[type=range]:focus::-ms-fill-upper {
   background: #FFFFFF;
 }
+
+div#black-player-controls div.black-player-controls-container div#time {
+  color: #fff;
+  display: inline-block;
+  width: 100px;
+  height: 25px;
+  vertical-align: middle;
+  text-align: left;
+  /*border: 1px solid red;*/
+  /*margin-left: 15px;*/
+  overflow: hidden;
+}
+
+div#time span.amplitude-current-time, div#time span.amplitude-duration-time {
+  color: #ffee55;
+}
+
 div#black-player-controls div.black-player-controls-container div#shuffle-black {
   display: inline-block;
   width: 15px;
   height: 14px;
   cursor: pointer;
   vertical-align: middle;
-  margin-right: 25px;
+  margin-right: 10px;
   margin-left: -16px;
+  /*border: 1px solid blue;*/
 }
 div#black-player-controls div.black-player-controls-container div#shuffle-black.amplitude-shuffle-off {
   background: url("./img/black-shuffle-off.svg");
@@ -363,27 +417,23 @@ div.black-player-song div.song-meta-container span.individual-song-name {
   display: block;
   color: white;
   font-size: 14px;
-  font-weight: bold;
+  /*font-weight: bold;*/
 }
 div.black-player-song div.song-meta-container span.individual-song-artist {
   display: block;
   color: rgba(255, 255, 255, 0.7);
   font-size: 13px;
 }
-div.black-player-song.amplitude-active-song-container div.song-meta-container span.individual-song-name {
+
+/* current song */
+div.black-player-song.amplitude-active-song-container div.song-meta-container span.individual-song-name,
+div#song-info {
   color: #2EBD59;
+  font-weight: bold;
 }
 
 div.black-player-song::after {
   content: "";
   display: table;
   clear: both;
-}
-
-/*
-  3. Layout
-*/
-body {
-  height: 100vh;
-  background: #fff;
 }

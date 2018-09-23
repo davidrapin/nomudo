@@ -17,21 +17,12 @@ class PlayerApp extends App {
           <!--img src="../album-art/soon-it-will-be-cold-enough.jpg"-->
           <div class="song-meta-container">
             <span class="individual-song-name">${song.name}</span>
-            <span class="individual-song-artist">${song.artist}</span>
+            <!--span class="individual-song-artist">${song.artist}</span-->
           </div>
         </div>
       `)).join('\n'));
       
-      /*$('logout-link').addEventListener('click', () => {
-        this.doLogout();
-      });*/
-      
       Amplitude.init({
-        /*"bindings": {
-          37: 'prev',
-          39: 'next',
-          32: 'play_pause'
-        },*/
         "songs": songs
         /*
           "name": "Bla",
@@ -41,7 +32,45 @@ class PlayerApp extends App {
           "cover_art_url": "../album-art/soon-it-will-be-cold-enough.jpg"
         */
       });
+      
+      document.addEventListener('keydown', (event) => {
+        //console.log('event.ctrlKey:' + event.ctrlKey + ' code:' + event.code);
+        if (event.code === 'ArrowLeft') {
+          if (event.ctrlKey) {
+            this.skipTo(-10);
+          } else {
+            Amplitude.previous();
+          }
+        } else if (event.code === 'ArrowRight') {
+          if (event.ctrlKey) {
+            this.skipTo(10);
+          } else {
+            Amplitude.next();
+          }
+        } else if (event.code === 'Space') {
+          event.preventDefault();
+          if (Amplitude.audio().paused) {
+            Amplitude.play();
+          } else {
+            Amplitude.pause();
+          }
+          return false;
+        }
+      }, false);
     });
+  }
+  
+  skipTo(offset) {
+    let newSeconds = Amplitude.getSongPlayedSeconds() + offset;
+    const duration = Amplitude.getSongDuration();
+    
+    if (newSeconds < 0) { 
+      newSeconds = 0; 
+    } else if (newSeconds > duration) { 
+      newSeconds = duration - 0.5;
+    }
+    const newPercent = newSeconds / duration;
+    Amplitude.setSongPlayedPercentage(newPercent * 100);
   }
 }
 
