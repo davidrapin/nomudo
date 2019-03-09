@@ -11,7 +11,17 @@ const Promise = require('bluebird');
 const bodyParser = require('body-parser');
 const serveStatic = require('serve-static');
 const cookieParser = require('cookie-parser')
-const readdirP = Promise.promisify(fs.readdir);
+
+const readdirP = (dir, param) => {
+  return new Promise((resolve, reject) => {
+    try {
+      resolve(fs.readdirSync(dir, param));
+    } catch(e) {
+      reject(e);
+    }
+  });
+};
+// Promise.promisify(fs.readdir); 
 
 // deps
 const Utils = require('./utils');
@@ -39,9 +49,29 @@ class User {
     Utils.jlog({username: this.username, root: this.absRoot}, 'user');
   }
   
+  _listFiles(root, suffix, accumulator) {
+    //console.log(root + ' (reading dir)');
+    return readdirP(root, {withFileTypes: true}).each((entry) => {
+      //console.log(root + ' (entry) ' + entry.name);
+      const entryPath = path.resolve(root, entry.name);
+      
+      if (entry.isDirectory()) {
+        return this._listFiles(entryPath, suffix, accumulator);
+      }
+      
+      if (entry.name.endsWith(suffix)) {
+        //console.log(root + ' (adding) ' + entry.name);
+        accumulator.push(entryPath);
+      }
+    }).catch(e => {
+      console.log('Could not read files in ' + root + ': ' + e.stack);
+    });
+  }
+  
   listFiles(extension) {
-    return readdirP(this.absRoot).then((items) => {
-      return items.filter(f => f.endsWith('.' + extension))
+    const list = [];
+    return this._listFiles(this.absRoot, '.' + extension, list).then(() => {
+      return list.map(dir => path.relative(this.absRoot, dir));
     });
   }
   

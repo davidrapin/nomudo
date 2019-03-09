@@ -323,7 +323,8 @@ div#black-player-controls div.black-player-controls-container div#progress-conta
 div#black-player-controls div.black-player-controls-container div#time {
   color: #fff;
   display: inline-block;
-  width: 100px;
+  min-width: 100px;
+  max-width: 120px;
   height: 25px;
   vertical-align: middle;
   text-align: left;

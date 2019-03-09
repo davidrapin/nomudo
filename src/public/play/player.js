@@ -1,16 +1,32 @@
 /* player.js */
 'use strict';
 
+function scompare(s1, s2) {
+  return s1.toLowerCase() === s2.toLowerCase() 
+    ? 0 
+    : (s1.toLowerCase() > s2.toLowerCase() ? 1 : -1);
+}
+
 class PlayerApp extends App {
   showMain() {
     this.api('GET', '/api/files', undefined).then(r => {
-      const songs = r.body.result.map(file => ({
-        url: file,
-        name: file.slice('/api/file/'.length, -4),
-        artist: '-/-',
-        album: '-/-',
-        cover_art_url: '/play/img/black-play.svg'
-      }));
+      const songs = r.body.result.map(file => {
+        const n = file.slice('/api/file/'.length, -4).split('/');
+        const name = (n.length > 1 ? n.slice(0, -1).join(' / ') + ' / ' : '') + n[n.length - 1].replace(/^_/, '')
+      
+        return {
+          url: file.split('/').map(s => encodeURIComponent(s)).join('/'),
+          name: name,
+          artist: '-/-',
+          album: n.length > 1 ? n[0] : 'z/z',
+          cover_art_url: '/play/img/black-play.svg'
+        };
+      });
+      
+      songs.sort((s1, s2) => {
+        const c = scompare(s1.album, s2.album);
+        return c !== 0 ? c : scompare(s1.name, s2.name);
+      });
       
       this.setContent(songs.map((song, index) => (`
         <div class="black-player-song amplitude-song-container amplitude-play-pause" amplitude-song-index="${index}">
@@ -39,7 +55,7 @@ class PlayerApp extends App {
           if (event.ctrlKey) {
             this.skipTo(-10);
           } else {
-            Amplitude.previous();
+            Amplitude.prev();
           }
         } else if (event.code === 'ArrowRight') {
           if (event.ctrlKey) {
