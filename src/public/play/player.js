@@ -2,6 +2,8 @@
 'use strict';
 
 function scompare(s1, s2) {
+  s1 = s1.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  s2 = s2.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   return s1.toLowerCase() === s2.toLowerCase() 
     ? 0 
     : (s1.toLowerCase() > s2.toLowerCase() ? 1 : -1);
