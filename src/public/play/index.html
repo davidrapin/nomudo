@@ -1,0 +1,47 @@
+<html>
+<head>
+  <title>NoMuDo Player</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" >
+  
+  <script src="/amplitude.js"></script>
+  <script src="/nosleep.js"></script>
+  <link rel="stylesheet" href="./amplitude.css"/>
+  <script src="../app.js"></script>
+  <script src="./player.js"></script>
+  
+</head>
+<body>
+  <div id="black-player">
+    <div id="black-player-playlist">Loading...</div>
+    <div id="black-player-controls">
+      <!--img amplitude-song-info="cover_art_url" class="playlist-album-art"/-->
+      <div class="black-player-controls-container">
+        <div id="song-info">
+ 		  <span amplitude-song-info="name" amplitude-main-song-info="true" class="song-name"></span>
+		  <!--span amplitude-song-info="artist" amplitude-main-song-info="true" class="song-artist"></span-->
+		</div>
+
+        <div id="progress-container-black">
+          <input type="range" step="0.001" class="amplitude-song-slider" amplitude-main-song-slider="true" />
+          <progress id="song-played-progress-black" class="amplitude-song-played-progress" amplitude-main-song-played-progress="true"></progress>
+          <progress id="song-buffered-progress-black" class="amplitude-buffered-progress" value="0"></progress>
+        </div>
+
+        <div id="controls">
+          <div class="amplitude-prev" id="previous-black"></div>
+          <div class="amplitude-play-pause" amplitude-main-play-pause="true" id="play-pause-black"></div>
+          <div class="amplitude-next" id="next-black"></div>
+          <!--div class="amplitude-repeat" id="repeat-black"></div-->
+		  <div class="amplitude-shuffle amplitude-shuffle-off" id="shuffle-black"></div>
+		  <div id="time">
+		    <span class="amplitude-current-time" amplitude-main-current-time="true"></span> 
+			/ 
+			<span class="amplitude-duration-time" amplitude-main-duration-time="true"></span>
+	      </div>
+        </div>
+      </div>
+    </div>
+  </div>
+    
+</body>
+</html>

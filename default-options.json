@@ -1,0 +1,11 @@
+{
+  "root": "/tmp",
+  "port": 3232,
+  "users": [
+    {
+      "username": "user",
+      "password": "password",
+      "jobs": []
+    }
+  ]
+}
