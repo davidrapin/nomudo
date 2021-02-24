@@ -83,13 +83,11 @@ div#black-player-controls div.black-player-controls-container span.song-name {
 
 div#black-player-controls div.black-player-controls-container div#progress-container-black {
   /*margin-right: 20px;*/
+  margin: 0 20px 6px 20px;
   position: relative;
   height: 20px;
   cursor: pointer;
-  margin-bottom: 6px;
-  /*
-    IE 11
-  */
+  /*margin-bottom: 6px;*/
 }
 div#black-player-controls div.black-player-controls-container div#progress-container-black:hover input[type=range].amplitude-song-slider::-webkit-slider-thumb {
   display: block;

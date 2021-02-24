@@ -12,8 +12,8 @@ const YDL_URL = 'https://yt-dl.org/downloads/latest/youtube-dl';
 const YDL_PATH = path.resolve(__dirname, '..', 'ydl');
 const YDL_BIN_PATH = path.resolve(__dirname, '..', 'ydl', 'youtube-dl');
 
-const FFMPEG_PATH = path.resolve(__dirname, '..', 'ffmpeg-3.1.1-64bit-static');
-const FFMPEG_URL = 'http://johnvansickle.com/ffmpeg/releases/ffmpeg-release-64bit-static.tar.xz';
+const FFMPEG_PATH = path.resolve(__dirname, '..', 'ffmpeg-4.1.3-amd64-static/');
+const FFMPEG_URL = 'https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz';
 const FFMPEG_ARCHIVE = path.resolve(__dirname, '..', 'ffmpeg.tar.xz');
 
 const FILENAME_RE = /\n\[download\] Destination: ([^\r\n]+)/;

@@ -15,14 +15,15 @@
     "express": "4.16.0",
     "express-session": "1.9.1",
     "fs-extra": "0.30.0",
-    "lodash": "~3.10.1",
+    "lodash": "3.10.1",
     "request": "2.73.0",
     "passport": "0.3.2",
     "passport-local": "1.0.0",
     "body-parser": "~1.15.2",
-	"serve-static": "1.13.2",
-	"cookie-parser": "1.4.3",
-	"amplitudejs": "3.3.1"
+    "serve-static": "1.13.2",
+    "cookie-parser": "1.4.3",
+    "amplitudejs": "3.3.1",
+    "nosleep.js": "0.9.0"
   },
   "devDependencies": {}
 }

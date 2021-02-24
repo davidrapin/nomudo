@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 
+const process = require('process');
 const path = require('path');
 const spawn = require('child_process').spawn;
 
@@ -21,14 +22,15 @@ const readdirP = (dir, param) => {
     }
   });
 };
-// Promise.promisify(fs.readdir); 
+// Promise.promisify(fs.readdir);
 
 // deps
 const Utils = require('./utils');
 const Ydl = require('./Ydl');
 
 const COOKIE_SECRET = Math.floor(Math.random() * 10000) + '_cookie_secret';
-const AMPLITUDE_PATH = path.resolve(__dirname, '..', 'node_modules', 'amplitudejs', 'dist', 'amplitude.js');
+const AMPLITUDE_PATH = path.resolve(__dirname, '..', 'node_modules', 'amplitudejs', 'dist', 'amplitude.min.js');
+const NOSLEEP_PATH = path.resolve(__dirname, '..', 'node_modules', 'nosleep.js', 'dist', 'NoSleep.min.js');
 
 // load options
 class User {
@@ -94,20 +96,30 @@ class User {
 }
 
 class Options {
-  constructor(optionsPath) {
-    // path
-    this.path = optionsPath || path.resolve(__dirname, '..', 'default-options.json');
+  constructor() {
+    this.path = path.resolve(process.env.NOMUDO_OPTIONS || './nomudo-options.json');
+
     const stat = fs.statSync(this.path);
     if (!stat.isFile()) {
-      Utils.fatal(`"${this.path}" must be an existing file`);
+      Utils.log(`Options file not found: "${this.path}", creating...`);
+      const defaults = require(path.resolve(__dirname, '..', 'default-options.json'));
+      fs.writeJsonSync(this.path, defaults);
+      Utils.log(`Options file generated from defaults, OK.`);
     }
-    
+
+    const stat2 = fs.statSync(this.path);
+    if (!stat2.isFile()) {
+      Utils.fatal(`Options file not found at "${this.path}"...`);
+    }
+
     this.parse(require(this.path));
+    Utils.log(`Options file loaded from "${this.path}".`);
+
   }
-  
+
   parse(options) {
     const baseDir = path.parse(this.path).dir;
-    
+
     this.port = options.port || 3030;
     this.root = options.root;
     this.absRoot = Utils.absDir(options.root, '.', baseDir);
@@ -253,6 +265,10 @@ app.get('/amplitude.js', (req, res) => {
   res.sendFile(AMPLITUDE_PATH);
 });
 
+app.get('/nosleep.js', (req, res) => {
+  res.sendFile(NOSLEEP_PATH);
+});
+
 app.post('/api/auth/login', (req, res) => {
   const user = access.login(req, res, req.body.username, req.body.password);
   if (user) {
@@ -332,7 +348,7 @@ app.get('/api/file/*', (req, res, next) => {
 
 Utils.log('NoMuDo!');
 
-const options = new Options(process.argv[2]);
+const options = new Options();
 const state = new State();
 const access = new Access(options, state);
 

@@ -1,6 +1,27 @@
 /* player.js */
 'use strict';
 
+/*
+class Wake {
+  constructor() {
+    this.noSleep = new NoSleep();
+    this.enabled = false;
+  }
+  enable() {
+    if (!this.enabled) {
+      this.noSleep.enable();
+    }
+  }
+  disable() {
+    if (this.enabled) {
+      this.noSleep.disable();
+    }
+  }
+}
+const wake = new Wake();
+*/ 
+
+
 function scompare(s1, s2) {
   s1 = s1.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   s2 = s2.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -41,7 +62,17 @@ class PlayerApp extends App {
       `)).join('\n'));
       
       Amplitude.init({
-        "songs": songs
+        "songs": songs,
+        "continue_next": true,
+        "callbacks": {
+          "before_play": () => {
+            //Wake.enable();
+            const name = Amplitude.getActiveSongMetadata().name;
+            document.title = name;
+          }
+          //"before_pause": () => Wake.disable(),
+          //"before_stop":  () => Wake.disable()
+        }
         /*
           "name": "Bla",
           "artist": "Emancipator",
@@ -50,6 +81,8 @@ class PlayerApp extends App {
           "cover_art_url": "../album-art/soon-it-will-be-cold-enough.jpg"
         */
       });
+      
+      
       
       document.addEventListener('keydown', (event) => {
         //console.log('event.ctrlKey:' + event.ctrlKey + ' code:' + event.code);
